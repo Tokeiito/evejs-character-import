@@ -114,6 +114,7 @@ function parseArgs(argv) {
       case "--username":
         args.username = next();
         break;
+      case "--export-dir":
       case "--dump":
         args.dump = next();
         break;
@@ -253,6 +254,22 @@ async function cmdDump(args) {
   });
 }
 
+/**
+ * An export dir is either one account folder (account.json + characters/),
+ * or a parent holding several of them — the exporter writes one folder per
+ * account under a shared exports/ root. Return every account folder found.
+ */
+function listExportDirs(root) {
+  if (fs.existsSync(path.join(root, "account.json"))) {
+    return [root];
+  }
+  return fs
+    .readdirSync(root, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => path.join(root, d.name))
+    .filter((dir) => fs.existsSync(path.join(dir, "account.json")));
+}
+
 async function cmdConvert(args) {
   const dumpPath = resolveDumpPath(args.dump);
   if (!dumpPath) {
@@ -261,11 +278,31 @@ async function cmdConvert(args) {
   if (!fs.existsSync(dumpPath)) {
     throw new Error(`Dump not found: ${dumpPath}`);
   }
-  return convertDump(dumpPath, {
-    username: args.username,
-    fallbackStationID: args.fallbackStation,
-    out: args.out || args.bundle,
-  });
+
+  const exportDirs = listExportDirs(dumpPath);
+  if (exportDirs.length === 0) {
+    throw new Error(
+      `No account.json in ${dumpPath}, and no subfolder contains one either.\n` +
+        "Point --export-dir at an export folder (account.json + characters/) " +
+        "or at the exports/ root that holds them.",
+    );
+  }
+
+  const results = [];
+  for (const dir of exportDirs) {
+    if (exportDirs.length > 1) {
+      console.log(`\n=== ${path.basename(dir)} ===`);
+    }
+    results.push(
+      convertDump(dir, {
+        username: args.username,
+        fallbackStationID: args.fallbackStation,
+        // --out names a single file, so only honour it for a single export
+        out: exportDirs.length === 1 ? args.out || args.bundle : undefined,
+      }),
+    );
+  }
+  return exportDirs.length === 1 ? results[0] : results;
 }
 
 /**
