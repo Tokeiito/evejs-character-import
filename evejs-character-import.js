@@ -53,6 +53,8 @@ Options:
   --bundle <path>       players-bundle.json path
   --username <name>     Filter / label for portraits
   --fallback-station <id>  Default ${JITA_44_STATION_ID} (Jita 4-4 remaps)
+  --type-data <path>    EveJS itemTypes/data.json (auto-detected from the
+                        gameStore data dir; also $EVEJS_GAMESTORE_DATA_DIR)
   --target <dataDir>    Host gameStore data dir (skips Docker)
   --host-only           Force host DB
   --volume <name>       Docker volume (auto-detect evejs-data / evejs-xeve-data)
@@ -77,6 +79,7 @@ function parseArgs(argv) {
     dump: null,
     bundle: null,
     fallbackStation: JITA_44_STATION_ID,
+    typeData: null,
     target: null,
     dryRun: false,
     onConflict: "skip",
@@ -123,6 +126,9 @@ function parseArgs(argv) {
         break;
       case "--fallback-station":
         args.fallbackStation = Number(next()) || JITA_44_STATION_ID;
+        break;
+      case "--type-data":
+        args.typeData = next();
         break;
       case "--target":
         args.target = next();
@@ -297,6 +303,7 @@ async function cmdConvert(args) {
       convertDump(dir, {
         username: args.username,
         fallbackStationID: args.fallbackStation,
+        typeDataPath: args.typeData,
         // --out names a single file, so only honour it for a single export
         out: exportDirs.length === 1 ? args.out || args.bundle : undefined,
       }),
@@ -719,6 +726,7 @@ async function cmdPipeline(args) {
   const converted = await convertDump(dumpPath, {
     username: args.username,
     fallbackStationID: args.fallbackStation,
+    typeDataPath: args.typeData,
   });
   console.log("\nPersonal export + portable package ready.");
   console.log(`  Export folder: ${dumpPath}`);

@@ -19,6 +19,8 @@ data export separately, then point this tool at that folder.
 # Build a players-bundle from an export directory
 node tools/evejs-character-import/evejs-character-import.js package \
   --export-dir /path/to/export-folder
+# Optional: point at the EveJS item type table explicitly
+#   --type-data /path/to/gameStore/data/itemTypes/data.json
 
 # Load into EveJS (server STOPPED)
 node tools/evejs-character-import/evejs-character-import.js import \

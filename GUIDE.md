@@ -43,6 +43,22 @@ Output under `_local/evejs-character-import/bundles/`.
 Citadel hangars and similar locations are remapped to a fallback NPC station
 (default **Jita 4-4**).
 
+Packaging reads the EveJS item type table (`itemTypes/data.json`) to tell
+charges (category 8) from modules: charges are written as stacks so they can be
+reloaded, and fitted modules (flag 11-132) are written online. The table is
+looked up in this order, and packaging fails loudly if none is found:
+
+1. `--type-data <path>`
+2. `$EVEJS_GAMESTORE_DATA_DIR/itemTypes/data.json`
+3. `_local/gameStore/data/itemTypes/data.json`
+4. `server/src/gameStore/data/itemTypes/data.json`
+
+```bash
+node tools/evejs-character-import/evejs-character-import.js package \
+  --export-dir /path/to/export-folder \
+  --type-data /path/to/gameStore/data/itemTypes/data.json
+```
+
 ## Import into EveJS
 
 **Stop the server first.**
